@@ -10,9 +10,10 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    public void sendResetPasswordEmail(String to, String resetLink) {
+    public void sendResetPasswordEmail(String toEmail, String token) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
+        String resetLink="http://localhost:3000/reset-password?token="+token;
+        message.setTo(toEmail);
         message.setSubject("Đặt lại mật khẩu - GiaSu Connect");
         message.setText("""
             Xin chào,

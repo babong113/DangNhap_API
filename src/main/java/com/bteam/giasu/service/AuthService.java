@@ -1,7 +1,9 @@
 package com.bteam.giasu.service;
 
+import com.bteam.giasu.dto.request.ForgotPasswordRequest;
 import com.bteam.giasu.dto.request.LoginRequest;
 import com.bteam.giasu.dto.request.RegisterRequest;
+import com.bteam.giasu.dto.request.ResetPasswordRequest;
 import com.bteam.giasu.dto.response.AuthRespone;
 import com.bteam.giasu.entity.User;
 import com.bteam.giasu.exception.InvalidDataException;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -49,18 +52,12 @@ public class AuthService {
             );
 
         } catch (InvalidDataException e) {
-
-            throw new InvalidDataException(
-                    "Vai trò không hợp lệ"
-            );
+            throw new InvalidDataException("Vai trò không hợp lệ");
         }
 
         // 5. Không cho client tự tạo ADMIN
         if (role == User.UserRole.ADMIN) {
-
-            throw new InvalidDataException(
-                    "Không thể đăng ký tài khoản ADMIN"
-            );
+            throw new InvalidDataException("Không thể đăng ký tài khoản ADMIN");
         }
 
         // 6. Tạo User
@@ -68,33 +65,22 @@ public class AuthService {
 
         user.setEmail(email);
 
-        user.setPasswordHash(
-                passwordEncoder.encode(
-                        request.getPassword()
-                )
-        );
+        user.setPasswordHash(passwordEncoder.encode(
+                        request.getPassword()));
 
-        user.setPhoneNumber(
-                request.getPhoneNumber().trim()
-        );
+        user.setPhoneNumber(request.getPhoneNumber().trim());
 
-        user.setFullName(
-                request.getFullName().trim()
-        );
+        user.setFullName(request.getFullName().trim());
 
         user.setRole(role);
 
-        user.setStatus(
-                User.UserStatus.ACTIVE
-        );
+        user.setStatus(User.UserStatus.ACTIVE);
 
         // 7. Save database
-        User savedUser =
-                userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         // 8. Sinh JWT
-        String token =
-                jwtService.generateToken(savedUser);
+        String token = jwtService.generateToken(savedUser);
 
         // 9. Response
         return new AuthRespone(
@@ -117,46 +103,31 @@ public class AuthService {
 
         // 2. Tìm user
         User user =
-                userRepository.findByEmail(email)
-                        .orElseThrow(
-                                () -> new InvalidDataException(
-                                        "Email hoặc mật khẩu không đúng"
-                                )
-                        );
+                userRepository.findByEmail(email).orElseThrow(
+                                () -> new InvalidDataException("Email hoặc mật khẩu không đúng"));
 
         // 3. Kiểm tra password
-        boolean passwordCorrect =
-                passwordEncoder.matches(
+        boolean passwordCorrect = passwordEncoder.matches(
                         request.getPassword(),
-                        user.getPasswordHash()
-                );
+                        user.getPasswordHash());
 
         if (!passwordCorrect) {
-
-            throw new InvalidDataException(
-                    "Email hoặc mật khẩu không đúng"
-            );
+            throw new InvalidDataException("Email hoặc mật khẩu không đúng");
         }
 
         // 4. Kiểm tra trạng thái account
         if (user.getStatus()
                 != User.UserStatus.ACTIVE) {
-
-            throw new InvalidDataException(
-                    "Tài khoản hiện không hoạt động"
-            );
+            throw new InvalidDataException("Tài khoản hiện không hoạt động");
         }
 
         // 5. Cập nhật lần đăng nhập cuối
-        user.setLastLogin(
-                ZonedDateTime.now()
-        );
+        user.setLastLogin(ZonedDateTime.now());
 
         userRepository.save(user);
 
         // 6. Generate JWT
-        String token =
-                jwtService.generateToken(user);
+        String token = jwtService.generateToken(user);
 
         // 7. Trả response
         return new AuthRespone(
@@ -166,6 +137,57 @@ public class AuthService {
                 user.getFullName(),
                 user.getRole().name()
         );
+    }
+
+    public void forgetPassword(ForgotPasswordRequest request)
+    {
+        String email=request.getEmail().toLowerCase();
+
+        User user= userRepository.findByEmail(email).orElseThrow(
+                ()-> new InvalidDataException("Không tìm thấy tài khoản với email này"));
+
+        String resetToken= UUID.randomUUID().toString();
+
+        ZonedDateTime expiryTime=ZonedDateTime.now().plusMinutes(30);
+
+        user.setResetPasswordToken(resetToken);
+        user.setResetPasswordTokenExpiry(expiryTime);
+
+        userRepository.save(user);
+
+        emailService.sendResetPasswordEmail(
+                user.getEmail(),
+                resetToken
+        );
+    }
+
+    public void resetPassword(ResetPasswordRequest request)
+    {
+        if(!request.getConfirmPassword().equals(request.getNewPassword()))
+        {
+            throw new InvalidDataException("xác nhận mật khẩu không khớp");
+        }
+
+        User user=userRepository.findByResetPasswordToken(request.getToken())
+                .orElseThrow(()-> new InvalidDataException("Token đặt lại mật khẩu không hợp lệ"));
+
+        if(user.getResetPasswordTokenExpiry()==null||
+                user.getResetPasswordTokenExpiry().isBefore(ZonedDateTime.now()))
+        {
+            throw new InvalidDataException("Đã hết hạn đặt lại mật khẩu");
+        }
+
+        String encodedPassword= passwordEncoder.encode(
+                request.getNewPassword()
+        );
+
+        user.setPasswordHash(encodedPassword);
+
+        user.setResetPasswordToken(null);
+        user.setResetPasswordTokenExpiry(null);
+
+        userRepository.save(user);
+
     }
 }
 

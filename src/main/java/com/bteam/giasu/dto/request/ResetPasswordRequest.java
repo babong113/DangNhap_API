@@ -15,10 +15,10 @@ public class ResetPasswordRequest {
     @NotBlank(message = "To không được để trống")
     private String token;
 
-    @NotBlank(message = "Không được để trống ")
-    @Size(min =8, message = "Mật khẩu ít nhất 8 kí tự")
+    @NotBlank(message = "Không được để trống")
+    @Size(min =6, message = "Mật khẩu ít nhất 6 kí tự")
     private String newPassword;
 
-    @NotBlank(message = "Không được để trống ")
+    @NotBlank(message = "Xác nhận mật khẩu không được để trống")
     private String confirmPassword;
 }
