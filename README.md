@@ -15,7 +15,7 @@ Project hien co:
 
 - Java 21 tro len.
 - MySQL hoac PostgreSQL.
-- Maven wrapper da co san trong project: `mvnw.cmd`.
+- Maven da duoc cai tren may.
 - SMTP Gmail neu muon dung chuc nang quen mat khau.
 
 ## Cau Truc Chinh
@@ -172,7 +172,7 @@ Chay lenh tai thu muc goc project:
 
 ```powershell
 cd D:\LogGin\DangNhap_API
-.\mvnw.cmd clean spring-boot:run
+mvn clean spring-boot:run
 ```
 
 Khi chay thanh cong se thay log gan giong:
@@ -191,7 +191,7 @@ http://localhost:7000
 ### Buoc 5: Chay test
 
 ```powershell
-.\mvnw.cmd test
+mvn test
 ```
 
 ## Luu Y Khi Dung Flyway
@@ -225,7 +225,7 @@ FLYWAY_BASELINE_ON_MIGRATE=false
 Neu da xoa hoac doi ten file migration, nen chay lai bang lenh `clean` de xoa file migration cu trong `target/classes`:
 
 ```powershell
-.\mvnw.cmd clean spring-boot:run
+mvn clean spring-boot:run
 ```
 
 ## Schema RBAC

@@ -31,20 +31,11 @@ Nhiem vu:
 - Them dependency cho Web MVC, Spring Security, Spring Data JPA, Flyway, MySQL, PostgreSQL, H2, Mail, Validation, JWT va Lombok.
 - Cau hinh plugin build Spring Boot va compiler.
 
-### `mvnw`, `mvnw.cmd`
-
-Maven wrapper.
-
-Nhiem vu:
-
-- Cho phep chay Maven ma khong can cai Maven rieng tren may.
-- Tren Windows dung `mvnw.cmd`.
-
-Lenh hay dung:
+Lenh Maven hay dung:
 
 ```powershell
-.\mvnw.cmd test
-.\mvnw.cmd clean spring-boot:run
+mvn test
+mvn clean spring-boot:run
 ```
 
 ### `.env`
