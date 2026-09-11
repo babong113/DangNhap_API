@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -21,8 +23,18 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.access-token-expiration:${jwt.expiration}}")
+    private long accessTokenExpiration;
+
+    @PostConstruct
+    void validateConfiguration() {
+        if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("jwt.secret phai co it nhat 32 bytes de ky HS256");
+        }
+        if (accessTokenExpiration <= 0) {
+            throw new IllegalStateException("jwt.access-token-expiration phai lon hon 0");
+        }
+    }
 
     public String generateToken(Account account) {
         Map<String, Object> claims = new HashMap<>();
@@ -35,9 +47,14 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(account.getEmail())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .setId(UUID.randomUUID().toString())
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public long getAccessTokenExpiration() {
+        return accessTokenExpiration;
     }
 
     public String extractEmail(String token) {

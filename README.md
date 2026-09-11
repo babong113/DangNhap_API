@@ -1,91 +1,35 @@
 # DangNhap API
 
-Day la do an API dang nhap co tich hop Flyway de quan ly database migration. Khi merge code giua cac thanh vien, neu co thay doi schema database thi them file migration moi thay vi sua database bang tay. Flyway se tu chay cac migration con thieu khi start API.
+API dang ky/dang nhap bang Spring Boot, Spring Security, JWT, refresh token, RBAC va Flyway cho PostgreSQL.
 
-Project hien co:
+## Tinh Nang Chinh
 
-- Auth API: register, login, forgot password, reset password.
-- JWT authentication.
+- Dang ky, dang nhap, quen mat khau, dat lai mat khau.
+- Access token JWT ngan han.
+- Refresh token dai han, luu trong DB bang SHA-256 hash.
+- Rotate refresh token moi lan refresh.
+- Phat hien refresh token da revoke bi dung lai va revoke cac refresh token active cua user.
+- Logout mot thiet bi va logout tat ca thiet bi.
+- Endpoint `/api/auth/me` de kiem tra access token va lay thong tin user hien tai.
 - RBAC voi `roles`, `permissions`, `user_roles`, `role_permissions`.
-- JPA/Hibernate de thao tac database.
-- Flyway de tao va cap nhat schema.
-- Ho tro PostgreSQL, MySQL va H2 cho test.
+- PostgreSQL migration bang Flyway.
+- Maven wrapper cuc bo de chay build/test.
 
 ## Yeu Cau
 
 - Java 21 tro len.
-- MySQL hoac PostgreSQL.
-- Maven da duoc cai tren may.
-- SMTP Gmail neu muon dung chuc nang quen mat khau.
+- PostgreSQL.
+- SMTP Gmail neu dung chuc nang quen mat khau.
 
-## Cau Truc Chinh
+## Cau Hinh `.env`
 
-```text
-src/main/java/com/bteam/platform/
-  PlatformApplication.java
-  core/
-    auth/
-      controller/
-      dto/
-      model/
-      port/
-      service/
-    common/
-      exception/
-      response/
-    security/
-  adapter/
-    mail/
-    persistence/jpa/
-```
-
-Migration database nam o:
-
-```text
-src/main/resources/db/migration/
-  h2/
-  mysql/
-  postgres/
-```
-
-## Huong Dan Chay Du Lieu
-
-### Buoc 1: Tao file `.env`
-
-Tao file `.env` o thu muc goc project:
+Tao file `.env` trong thu muc goc:
 
 ```text
 D:\LogGin\DangNhap_API\.env
 ```
 
-Noi dung `.env` cau hinh giong nhu file `.env.example`.
-
-Vi du voi MySQL:
-
-```properties
-APP_PROFILE=mysql
-SERVER_PORT=7000
-
-DB_URL=jdbc:mysql://localhost:3306/dangnhap_auth_api?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-DB_USERNAME=root
-DB_PASSWORD=123456
-
-JWT_SECRET=replace_with_at_least_32_characters_secret_key
-JWT_EXPIRATION=86400000
-
-CORS_ALLOWED_ORIGINS=*
-
-AUTH_DEFAULT_ROLE=STUDENT
-AUTH_ALLOWED_ROLES=TUTOR,STUDENT,PARENT,ADMIN
-
-FLYWAY_ENABLED=true
-FLYWAY_BASELINE_ON_MIGRATE=false
-
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_gmail_app_password
-```
-
-Vi du voi PostgreSQL:
+Vi du:
 
 ```properties
 APP_PROFILE=postgres
@@ -96,7 +40,8 @@ DB_USERNAME=postgres
 DB_PASSWORD=123456
 
 JWT_SECRET=replace_with_at_least_32_characters_secret_key
-JWT_EXPIRATION=86400000
+JWT_ACCESS_TOKEN_EXPIRATION=900000
+JWT_REFRESH_TOKEN_EXPIRATION=2592000000
 
 CORS_ALLOWED_ORIGINS=*
 
@@ -110,76 +55,18 @@ MAIL_USERNAME=your_email@gmail.com
 MAIL_PASSWORD=your_gmail_app_password
 ```
 
-### Buoc 2: Chon database trong `application.properties`
+Ghi chu:
 
-Mo file:
+- `JWT_ACCESS_TOKEN_EXPIRATION=900000` la 15 phut.
+- `JWT_REFRESH_TOKEN_EXPIRATION=2592000000` la 30 ngay.
+- `JWT_SECRET` phai co it nhat 32 bytes.
+- `JWT_EXPIRATION` cu van duoc support fallback, nhung nen dung `JWT_ACCESS_TOKEN_EXPIRATION`.
 
-```text
-src/main/resources/application.properties
-```
-
-Kiem tra dong:
-
-```properties
-spring.profiles.active=${APP_PROFILE:mysql}
-```
-
-Gia tri sau dau `:` la database mac dinh neu `.env` khong co `APP_PROFILE`.
-
-Dung MySQL:
-
-```properties
-spring.profiles.active=${APP_PROFILE:mysql}
-```
-
-Dung PostgreSQL:
-
-```properties
-spring.profiles.active=${APP_PROFILE:postgres}
-```
-
-Neu file `.env` da co `APP_PROFILE=mysql` hoac `APP_PROFILE=postgres` thi Spring se uu tien gia tri trong `.env`.
-
-### Buoc 3: Kiem tra file profile database
-
-Neu dung MySQL, app se doc:
-
-```text
-src/main/resources/application-mysql.properties
-```
-
-Neu dung PostgreSQL, app se doc:
-
-```text
-src/main/resources/application-postgres.properties
-```
-
-Moi profile se cau hinh Flyway location rieng:
-
-```properties
-spring.flyway.locations=classpath:db/migration/mysql
-```
-
-hoac:
-
-```properties
-spring.flyway.locations=classpath:db/migration/postgres
-```
-
-### Buoc 4: Chay API
-
-Chay lenh tai thu muc goc project:
+## Chay API
 
 ```powershell
 cd D:\LogGin\DangNhap_API
-mvn clean spring-boot:run
-```
-
-Khi chay thanh cong se thay log gan giong:
-
-```text
-Tomcat started on port 7000
-Started PlatformApplication
+.\mvnw.cmd spring-boot:run
 ```
 
 API chay tai:
@@ -188,80 +75,43 @@ API chay tai:
 http://localhost:7000
 ```
 
-### Buoc 5: Chay test
+## Chay Test
 
 ```powershell
-mvn test
+.\mvnw.cmd clean test
 ```
 
-## Luu Y Khi Dung Flyway
-
-Flyway se tu chay migration trong thu muc dung voi profile database dang active.
-
-Vi du:
-
-- `APP_PROFILE=mysql` se chay migration trong `db/migration/mysql`.
-- `APP_PROFILE=postgres` se chay migration trong `db/migration/postgres`.
-
-Khi database moi hoan toan, cau hinh:
-
-```properties
-FLYWAY_ENABLED=true
-FLYWAY_BASELINE_ON_MIGRATE=false
-```
-
-Khi database da co bang tu truoc nhung chua co bang `flyway_schema_history`, co the can cau hinh tam thoi:
-
-```properties
-FLYWAY_BASELINE_ON_MIGRATE=true
-```
-
-Sau khi baseline/migrate xong, nen doi lai:
-
-```properties
-FLYWAY_BASELINE_ON_MIGRATE=false
-```
-
-Neu da xoa hoac doi ten file migration, nen chay lai bang lenh `clean` de xoa file migration cu trong `target/classes`:
-
-```powershell
-mvn clean spring-boot:run
-```
-
-## Schema RBAC
-
-Schema chinh gom:
-
-- `users`: thong tin tai khoan.
-- `roles`: danh sach vai tro.
-- `permissions`: danh sach quyen.
-- `user_roles`: lien ket user voi role.
-- `role_permissions`: lien ket role voi permission.
-
-Role mac dinh duoc seed:
+Ket qua test gan nhat:
 
 ```text
-TUTOR
-STUDENT
-PARENT
-ADMIN
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
 ```
 
-Neu muon dung database mau khac co role nhu `USER`, `ADMIN`, `MODERATOR`, can doi `.env` cho khop:
+## Flyway PostgreSQL
 
-```properties
-AUTH_DEFAULT_ROLE=USER
-AUTH_ALLOWED_ROLES=USER,ADMIN,MODERATOR
+Migration nam o:
+
+```text
+src/main/resources/db/migration/postgres/
 ```
 
-Neu database mau duoc tao bang SQL tay va khong muon Flyway tao schema, co the tat Flyway:
+Danh sach migration:
 
-```properties
-FLYWAY_ENABLED=false
-JPA_DDL_AUTO=update
-```
+- `V1__create_auth_rbac_tables.sql`: tao bang auth/RBAC co ban.
+- `V2__migrate_user_role_to_user_roles.sql`: migrate cot role cu sang bang `user_roles`.
+- `V3__create_refresh_tokens.sql`: tao bang `refresh_tokens`.
+- `V4__ensure_refresh_tokens_schema.sql`: dam bao bang `refresh_tokens` co du cot/index can thiet cho DB da tao thu cong truoc do.
 
-## API Mau
+Bang `refresh_tokens` luu:
+
+- `token_hash`: hash SHA-256 cua refresh token.
+- `expires_at`: han refresh token.
+- `revoked_at`: thoi diem token bi thu hoi.
+- `replaced_by_token_id`: token moi thay the token cu khi rotate.
+- `created_by_ip`, `user_agent`: thong tin request tao token.
+
+## JWT Flow
 
 ### Dang Ky
 
@@ -280,7 +130,7 @@ Content-Type: application/json
 }
 ```
 
-Neu khong gui `role`, API se dung `AUTH_DEFAULT_ROLE` trong `.env`.
+Neu khong gui `role`, API dung `AUTH_DEFAULT_ROLE`.
 
 ### Dang Nhap
 
@@ -296,13 +146,113 @@ Content-Type: application/json
 }
 ```
 
-Dung token tra ve de goi API can dang nhap:
+Response thanh cong:
 
-```http
-Authorization: Bearer jwt-token
+```json
+{
+  "success": true,
+  "message": "Dang nhap thanh cong",
+  "data": {
+    "accessToken": "jwt-access-token",
+    "refreshToken": "opaque-refresh-token",
+    "tokenType": "Bearer",
+    "expiresIn": 900,
+    "userId": "1",
+    "email": "student@example.com",
+    "fullName": "Nguyen Van A",
+    "roles": ["STUDENT"],
+    "permissions": ["account:read"]
+  }
+}
 ```
 
-### Quen Mat Khau
+Dung access token:
+
+```http
+Authorization: Bearer jwt-access-token
+```
+
+### Lay User Hien Tai
+
+Dung de test access token va lay thong tin user dang dang nhap.
+
+```http
+GET /api/auth/me
+Authorization: Bearer jwt-access-token
+```
+
+Response thanh cong:
+
+```json
+{
+  "success": true,
+  "message": "Lay thong tin nguoi dung thanh cong",
+  "data": {
+    "userId": "1",
+    "email": "student@example.com",
+    "fullName": "Nguyen Van A",
+    "roles": ["STUDENT"],
+    "permissions": ["account:read"]
+  }
+}
+```
+
+### Lam Moi Token
+
+```http
+POST /api/auth/refresh-token
+Content-Type: application/json
+```
+
+```json
+{
+  "refreshToken": "opaque-refresh-token"
+}
+```
+
+Ket qua:
+
+- API tra `accessToken` moi.
+- API tra `refreshToken` moi.
+- Refresh token cu bi set `revoked_at`.
+- Refresh token cu co `replaced_by_token_id` tro toi token moi.
+
+Neu refresh token cu da bi revoke ma bi dung lai, API se coi la dau hieu reuse va revoke cac refresh token active cua user.
+
+### Dang Xuat Mot Thiet Bi
+
+```http
+POST /api/auth/logout
+Content-Type: application/json
+```
+
+```json
+{
+  "refreshToken": "opaque-refresh-token"
+}
+```
+
+Ket qua:
+
+- Refresh token bi set `revoked_at`.
+- Refresh token do khong con dung de refresh duoc.
+
+### Dang Xuat Tat Ca Thiet Bi
+
+Endpoint nay can access token hop le.
+
+```http
+POST /api/auth/logout-all
+Authorization: Bearer jwt-access-token
+```
+
+Ket qua:
+
+- Tat ca refresh token active cua user bi revoke.
+
+## Quen Mat Khau
+
+### Gui Email Dat Lai Mat Khau
 
 ```http
 POST /api/auth/forgot-password
@@ -330,19 +280,35 @@ Content-Type: application/json
 }
 ```
 
-## Cach Merge Code Co Thay Doi Database
+## Luu Y Bao Mat
 
-Khi can them bang, them cot, them role hoac permission:
+- API hien tai chua blacklist access token theo `jti`.
+- Khi logout, refresh token bi revoke ngay, nhung access token cu van co the dung toi khi het han.
+- Vi access token mac dinh chi song 15 phut, cach nay chap nhan duoc cho hien tai.
+- Neu sau nay can logout mat hieu luc ngay lap tuc, hay them bang/cache blacklist access token theo `jti`.
 
-1. Khong sua truc tiep file migration da chay tren may nguoi khac.
-2. Tao file migration moi tang version.
-3. Tao file tuong ung cho DB can ho tro.
+## Kiem Tra DB Refresh Token
 
-Vi du:
-
-```text
-src/main/resources/db/migration/mysql/V2__add_course_tables.sql
-src/main/resources/db/migration/postgres/V2__add_course_tables.sql
+```sql
+select id, user_id, token_hash, expires_at, revoked_at, replaced_by_token_id
+from refresh_tokens
+order by id desc;
 ```
 
-Sau khi pull code moi, chi can chay lai API, Flyway se tu apply migration con thieu.
+DB chi nen co `token_hash`, khong nen co raw refresh token.
+
+## Merge Code Co Thay Doi Database
+
+Khi can them bang/cot/index:
+
+1. Khong sua migration da chay tren moi truong that.
+2. Tao migration moi tang version.
+3. Uu tien migration trong `src/main/resources/db/migration/postgres`.
+
+Sau khi pull code moi, chay:
+
+```powershell
+.\mvnw.cmd clean test
+```
+
+hoac start API de Flyway apply migration con thieu.

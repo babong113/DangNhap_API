@@ -24,6 +24,12 @@ public class JpaAccountStore implements AccountStore {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Account> findById(Long id) {
+        return userRepository.findById(id).map(this::toAccount);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Account> findByEmail(String email) {
         return userRepository.findByEmail(email).map(this::toAccount);
     }
