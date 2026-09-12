@@ -41,7 +41,7 @@ CREATE TABLE role_permissions (
     CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
 
-INSERT INTO roles (name, description) VALUES ('TUTOR', 'Tutor account');
+INSERT INTO roles (name, description) VALUES ('USER', 'Tutor account');
 INSERT INTO roles (name, description) VALUES ('STUDENT', 'Student account');
 INSERT INTO roles (name, description) VALUES ('PARENT', 'Parent account');
 INSERT INTO roles (name, description) VALUES ('ADMIN', 'System administrator');
